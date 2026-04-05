@@ -25,6 +25,24 @@ else
     sudo apt-get install -y docker-compose
 fi
 
+if ! command -v pip3 &> /dev/null
+then
+    echo "pip3 not found. Installing..."
+    sudo apt-get update -y
+    sudo apt-get install -y python3-pip
+else
+    echo "pip3 already installed."
+fi
+
+log "Updating package indexes..."
+sudo apt-get update -y
+
+# Додай це тут:
+if ! command -v bc &> /dev/null; then
+    log "bc not found. Installing bc for version comparison..."
+    sudo apt-get install -y bc
+fi
+
 if command -v python3 &> /dev/null; then
     PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 
@@ -37,11 +55,6 @@ if command -v python3 &> /dev/null; then
 else
     log "Python not found. Installing Python 3.9..."
     sudo apt-get install -y python3.9
-fi
-
-if ! command -v pip3 &> /dev/null; then
-    log "Installation pip..."
-    sudo apt-get install -y python3-pip
 fi
 
 if python3 -m django --version &> /dev/null; then
