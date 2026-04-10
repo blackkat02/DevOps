@@ -25,7 +25,6 @@ else
     sudo systemctl enable docker || true
 fi
 
-# 3. Docker Compose
 if command -v docker-compose &> /dev/null; then
     log "Docker Compose already installed"
 else
