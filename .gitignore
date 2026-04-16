@@ -18,3 +18,10 @@ Thumbs.db
 
 # VS Code
 .vscode/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+aws/
+awscliv2.zip
