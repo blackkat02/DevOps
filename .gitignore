@@ -24,4 +24,5 @@ Thumbs.db
 *.tfstate
 *.tfstate.backup
 aws/
-awscliv2.zip
+awscliv2.zip*.tar.gz
+linux-amd64/

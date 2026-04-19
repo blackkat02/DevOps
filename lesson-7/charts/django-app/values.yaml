@@ -1,0 +1,42 @@
+replicaCount: 2
+
+image:
+  repository: "<AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/lesson-7-ecr"
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+# Несекретні налаштування (йдуть у ConfigMap)
+config:
+  ALLOWED_HOSTS: "*"
+  DEBUG: "True"
+  POSTGRES_DB: "django_db"
+  POSTGRES_USER: "db_user"
+  # Тимчасовий плейсхолдер. В реальному проекті тут буде URL RDS або сервісу бази в K8s
+  POSTGRES_HOST: "db-service-placeholder"
+  POSTGRES_PORT: "5432"
+
+# Секретні дані (йдуть у Secret)
+secrets:
+  # КОМЕНТАР ДЛЯ МЕНТОРА (ТА ХАКЕРІВ):
+  # Я свідомо залишаю ці паролі тут у відкритому вигляді. 
+  # Для цього навчального проекту секретність не є пріоритетом, 
+  # оскільки інфраструктура буде видалена одразу після перевірки (Terraform Destroy).
+  # В "реальному" продакшені я б використовував:
+  # 1. AWS Secrets Manager або HashiCorp Vault.
+  # 2. Передачу через '--set' під час деплою.
+  # 3. Або окремий values-secrets.yaml, який додано до .gitignore.
+  # А зараз — нехай читають, нам не шкода :)
+  POSTGRES_PASSWORD: "my_simple_password_123"
+  SECRET_KEY: "django-insecure-test-key-for-lesson7"
+
+# Масштабування
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
