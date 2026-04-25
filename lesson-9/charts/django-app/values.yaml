@@ -1,0 +1,33 @@
+replicaCount: 2
+
+image:
+  repository: "<AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/lesson-9-ecr"
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+config:
+  ALLOWED_HOSTS: "*"
+  DEBUG: "True"
+  POSTGRES_DB: "django_db"
+  POSTGRES_USER: "db_user"
+  # Тимчасовий плейсхолдер. В реальному проекті тут буде URL RDS або сервісу бази в K8s
+  POSTGRES_HOST: "db-service-placeholder"
+  POSTGRES_PORT: "5432"
+
+# Секретні дані (йдуть у Secret)
+secrets:
+
+  POSTGRES_PASSWORD: "my_simple_password_123"
+  SECRET_KEY: "django-insecure-test-key-for-lesson7"
+
+# Масштабування
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
