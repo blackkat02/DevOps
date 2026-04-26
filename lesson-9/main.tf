@@ -84,3 +84,8 @@ module "argo_cd" {
   cluster_name = module.eks.cluster_name
   depends_on   = [module.eks]
 }
+
+resource "aws_iam_role_policy_attachment" "kaniko_ecr_power" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+  role       = module.eks.node_iam_role_name
+}

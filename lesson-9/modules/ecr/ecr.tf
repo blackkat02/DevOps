@@ -11,7 +11,6 @@ resource "aws_ecr_repository" "main" {
   }
 }
 
-# Політика життєвого циклу: зберігати лише останні 10 образів
 resource "aws_ecr_lifecycle_policy" "main" {
   repository = aws_ecr_repository.main.name
 
