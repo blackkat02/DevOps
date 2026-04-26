@@ -23,12 +23,12 @@ spec:
     }
 
     environment {
-        ECR_REGISTRY = "882574060785.dkr.ecr.us-west-2.amazonaws.com"
-        IMAGE_NAME    = "lesson-9-ecr"
-        IMAGE_TAG     = "v1.0.${BUILD_NUMBER}"
+        ECR_REGISTRY   = "882574060785.dkr.ecr.us-west-2.amazonaws.com"
+        ECR_REPOSITORY = "lesson-9-ecr" 
+        IMAGE_TAG      = "v1.0.${BUILD_NUMBER}"
 
-        COMMIT_EMAIL  = "jenkins@example.com"
-        COMMIT_NAME   = "Jenkins"
+        COMMIT_EMAIL   = "jenkins@example.com"
+        COMMIT_NAME    = "Jenkins"
     }
 
     stages {
