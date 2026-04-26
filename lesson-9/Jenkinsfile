@@ -50,18 +50,20 @@ spec:
                 container('git') {
                     withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
                         sh """
-                              git config --global user.email "${COMMIT_EMAIL}"
-                              git config --global user.name "${COMMIT_NAME}"
+                            git config --global user.email "${COMMIT_EMAIL}"
+                            git config --global user.name "${COMMIT_NAME}"
 
-                              # Додаємо префікс lesson-9/ до шляху
-                              sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' lesson-9/charts/django-app/values.yaml
+                            # Оновлюємо тег у правильному файлі
+                            sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' lesson-9/charts/django-app/values.yaml
 
-                              git add lesson-9/charts/django-app/values.yaml
-                              git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
+                            # Додаємо саме цей файл у git
+                            git add lesson-9/charts/django-app/values.yaml
+                            
+                            git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
 
-                              # Переконайся, що назва репозиторію DevOps, а не lesson-9
-                              git push https://${GIT_USER}:${GIT_PAT}@github.com/blackkat02/DevOps.git HEAD:lesson-9
-                          """
+                            # Пушимо зміни в твою гілку
+                            git push https://${GIT_USER}:${GIT_PAT}@github.com/blackkat02/DevOps.git HEAD:lesson-9
+                        """
                     }
                 }
             }

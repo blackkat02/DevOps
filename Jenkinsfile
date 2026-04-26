@@ -53,12 +53,12 @@ spec:
                             git config --global user.email "${COMMIT_EMAIL}"
                             git config --global user.name "${COMMIT_NAME}"
 
-                            sed -i "s/tag: .*/tag: \\"${IMAGE_TAG}\\"/" charts/django-app/values.yaml
+                            sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' lesson-9/charts/django-app/values.yaml
 
-                            git add charts/django-app/values.yaml
+                            git add lesson-9/charts/django-app/values.yaml
                             git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
 
-                            git push https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_USER}/lesson-9.git main
+                            git push https://${GIT_USER}:${GIT_PAT}@github.com/blackkat02/DevOps.git HEAD:lesson-9
                         """
                     }
                 }
