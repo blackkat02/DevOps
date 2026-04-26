@@ -50,18 +50,16 @@ spec:
                 container('git') {
                     withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
                         sh """
+                            git config --global --add safe.directory ${WORKSPACE}
+
                             git config --global user.email "${COMMIT_EMAIL}"
                             git config --global user.name "${COMMIT_NAME}"
 
-                            # Оновлюємо тег у правильному файлі
                             sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' lesson-9/charts/django-app/values.yaml
 
-                            # Додаємо саме цей файл у git
                             git add lesson-9/charts/django-app/values.yaml
-                            
                             git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
 
-                            # Пушимо зміни в твою гілку
                             git push https://${GIT_USER}:${GIT_PAT}@github.com/blackkat02/DevOps.git HEAD:lesson-9
                         """
                     }
