@@ -9,3 +9,9 @@ variable "vpc_id" {
 variable "private_subnet_ids" {
   type = list(string)
 }
+
+variable "eks_managed_node_groups" {
+  description = "Map of EKS managed node group definitions"
+  type        = any
+  default     = {}
+}

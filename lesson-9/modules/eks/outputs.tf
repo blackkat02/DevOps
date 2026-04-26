@@ -17,7 +17,3 @@ output "cluster_id" {
   description = "The ID of the EKS cluster"
   value       = module.eks.cluster_id
 }
-
-output "node_iam_role_name" {
-  value = aws_iam_role.nodes.name # Перевір, як саме називається ресурс aws_iam_role у тебе в модулі
-}

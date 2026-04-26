@@ -70,6 +70,20 @@ module "eks" {
   cluster_name       = "django-cluster"
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
+
+  eks_managed_node_groups = {
+    main = {
+      instance_types = ["t3.small"]
+      min_size       = 0
+      max_size       = 3
+      desired_size   = 2
+
+      iam_role_additional_policies = {
+        AmazonEBSCSIDriverPolicy            = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+        AmazonEC2ContainerRegistryPowerUser = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+      }
+    }
+  }
 }
 
 module "jenkins" {
@@ -83,9 +97,4 @@ module "argo_cd" {
   source       = "./modules/argo_cd"
   cluster_name = module.eks.cluster_name
   depends_on   = [module.eks]
-}
-
-resource "aws_iam_role_policy_attachment" "kaniko_ecr_power" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
-  role       = module.eks.node_iam_role_name
 }
