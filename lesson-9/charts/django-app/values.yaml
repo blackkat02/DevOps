@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: "<AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/lesson-9-ecr"
-  tag: "v1.0.16"
+  tag: "v1.0.17"
   pullPolicy: Always
 
 service:
