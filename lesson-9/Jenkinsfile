@@ -50,12 +50,17 @@ spec:
                 container('git') {
                     withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
                         sh """
+                            echo "Current workspace: ${WORKSPACE}"
+                            echo "Current user: \$(whoami)"
+
                             git config --global --add safe.directory ${WORKSPACE}
 
                             git config --global user.email "${COMMIT_EMAIL}"
                             git config --global user.name "${COMMIT_NAME}"
 
                             sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' lesson-9/charts/django-app/values.yaml
+
+                            grep "tag:" lesson-9/charts/django-app/values.yaml
 
                             git add lesson-9/charts/django-app/values.yaml
                             git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
