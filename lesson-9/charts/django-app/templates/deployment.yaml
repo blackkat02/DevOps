@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "django-app.fullname" . }}
-  labels:
-    app: django
 spec:
 {{- if not .Values.hpa.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -22,7 +20,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.targetPort }}
-          
+
           envFrom:
             - configMapRef:
                 name: {{ include "django-app.fullname" . }}-config
@@ -37,15 +35,24 @@ spec:
               cpu: "500m"
               memory: "512Mi"
 
+          startupProbe:
+            httpGet:
+              path: /admin/login/
+              port: {{ .Values.service.targetPort }}
+            failureThreshold: 10
+            periodSeconds: 10
+
           livenessProbe:
             httpGet:
               path: /admin/login/
               port: {{ .Values.service.targetPort }}
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            failureThreshold: 3
+
           readinessProbe:
             httpGet:
               path: /admin/login/
               port: {{ .Values.service.targetPort }}
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
             periodSeconds: 10

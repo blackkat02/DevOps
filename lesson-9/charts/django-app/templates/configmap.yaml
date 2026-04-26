@@ -8,3 +8,4 @@ data:
   POSTGRES_USER: {{ .Values.config.POSTGRES_USER | quote }}
   POSTGRES_HOST: {{ .Values.config.POSTGRES_HOST | quote }}
   POSTGRES_PORT: {{ .Values.config.POSTGRES_PORT | quote }}
+  

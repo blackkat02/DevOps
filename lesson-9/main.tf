@@ -8,18 +8,48 @@ terraform {
   }
 }
 
+data "aws_eks_cluster" "cluster" {
+  name = module.eks.cluster_name
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_name
+}
+
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    command     = "aws"
+  }
+}
+
+provider "helm" {
+  kubernetes = {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    
+    exec = {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+      command     = "aws"
+    }
+  }
+}
+
 provider "aws" {
   region = "us-west-2"
 }
 
-# 1. Модуль S3 та DynamoDB
 module "s3_backend" {
   source      = "./modules/s3-backend"
   bucket_name = var.bucket_name
   table_name  = var.table_name
 }
 
-# 2. Модуль VPC
 module "vpc" {
   source             = "./modules/vpc"
   vpc_cidr_block     = "10.0.0.0/16"
@@ -29,17 +59,28 @@ module "vpc" {
   vpc_name           = "lesson-9-vpc"
 }
 
-# 3. Модуль ECR
 module "ecr" {
   source       = "./modules/ecr"
   ecr_name     = "lesson-9-ecr"
   scan_on_push = true
 }
 
-# 3. Модуль EKS
 module "eks" {
   source             = "./modules/eks"
   cluster_name       = "django-cluster"
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
+}
+
+module "jenkins" {
+  source       = "./modules/jenkins"
+  admin_password = var.admin_password
+  cluster_name = module.eks.cluster_name
+  depends_on   = [module.eks]
+}
+
+module "argo_cd" {
+  source       = "./modules/argo_cd"
+  cluster_name = module.eks.cluster_name
+  depends_on   = [module.eks]
 }

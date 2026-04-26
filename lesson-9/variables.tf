@@ -9,3 +9,9 @@ variable "table_name" {
   type        = string
   default     = "terraform-locks"
 }
+
+variable "admin_password" {
+  description = "Jenkins admin password"
+  type        = string
+  sensitive   = true
+}

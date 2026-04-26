@@ -1,0 +1,70 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: jenkins-kaniko
+spec:
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:v1.16.0-debug
+    imagePullPolicy: Always
+    command: ["sleep"]
+    args: ["99d"]
+  - name: git
+    image: alpine/git:latest
+    command: ["sleep"]
+    args: ["99d"]
+"""
+        }
+    }
+
+    environment {
+        ECR_REGISTRY = "882574060785.dkr.ecr.us-west-2.amazonaws.com"
+        IMAGE_NAME    = "lesson-9-ecr"
+        IMAGE_TAG     = "v1.0.${BUILD_NUMBER}"
+        
+        // Налаштування для Git commit
+        COMMIT_EMAIL  = "jenkins@example.com"
+        COMMIT_NAME   = "Jenkins"
+    }
+
+    stages {
+        stage('Build & Push to ECR') {
+            steps {
+                container('kaniko') {
+                    sh """
+                        /kaniko/executor \
+                          --context ${WORKSPACE} \
+                          --dockerfile ${WORKSPACE}/Dockerfile \
+                          --destination ${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
+                          --destination ${ECR_REGISTRY}/${IMAGE_NAME}:latest
+                    """
+                }
+            }
+        }
+
+        stage('Update Helm Chart Tag') {
+            steps {
+                container('git') {
+                    withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
+                        sh """
+                            git config --global user.email "${COMMIT_EMAIL}"
+                            git config --global user.name "${COMMIT_NAME}"
+
+                            sed -i "s/tag: .*/tag: \\"${IMAGE_TAG}\\"/" charts/django-app/values.yaml
+
+                            git add charts/django-app/values.yaml
+                            git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
+
+                            git push https://${GIT_USER}:${GIT_PAT}@github.com/${GIT_USER}/lesson-9.git main
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
