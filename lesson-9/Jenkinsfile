@@ -50,7 +50,8 @@ spec:
                 container('git') {
                     withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
                         sh """
-                            git config --global --add safe.directory /home/jenkins/agent/workspace/lesson-9-pipeline
+                            set -x
+                            git config --global --add safe.directory '*'
 
                             git config --global user.email "${COMMIT_EMAIL}"
                             git config --global user.name "${COMMIT_NAME}"
