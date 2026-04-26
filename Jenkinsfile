@@ -26,8 +26,7 @@ spec:
         ECR_REGISTRY = "882574060785.dkr.ecr.us-west-2.amazonaws.com"
         IMAGE_NAME    = "lesson-9-ecr"
         IMAGE_TAG     = "v1.0.${BUILD_NUMBER}"
-        
-        // Налаштування для Git commit
+
         COMMIT_EMAIL  = "jenkins@example.com"
         COMMIT_NAME   = "Jenkins"
     }
@@ -37,11 +36,10 @@ spec:
             steps {
                 container('kaniko') {
                     sh """
-                        /kaniko/executor \
-                          --context ${WORKSPACE} \
-                          --dockerfile ${WORKSPACE}/Dockerfile \
-                          --destination ${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
-                          --destination ${ECR_REGISTRY}/${IMAGE_NAME}:latest
+                    /kaniko/executor --context ${WORKSPACE}/lesson-9/app \
+                    --dockerfile ${WORKSPACE}/lesson-9/app/Dockerfile \
+                    --destination ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} \
+                    --destination ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
                     """
                 }
             }

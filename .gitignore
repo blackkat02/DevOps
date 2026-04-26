@@ -30,3 +30,4 @@ linux-amd64/
 
 *.backup
 terraform.tfstate*
+*.tfstate*
