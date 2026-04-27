@@ -23,6 +23,11 @@ Thumbs.db
 .terraform/
 *.tfstate
 *.tfstate.backup
+*.tfvars
 aws/
 awscliv2.zip*.tar.gz
 linux-amd64/
+
+*.backup
+terraform.tfstate*
+*.tfstate*
