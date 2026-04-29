@@ -1,0 +1,13 @@
+controller:
+  componentName: "jenkins-controller"
+  serviceType: LoadBalancer
+
+agent:
+  enabled: true
+  image:
+    repository: "jenkins/inbound-agent"
+    tag: "latest"
+
+persistence:
+  enabled: true
+  size: "10Gi"
