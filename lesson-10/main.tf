@@ -98,3 +98,27 @@ module "argo_cd" {
   cluster_name = module.eks.cluster_name
   depends_on   = [module.eks]
 }
+
+module "rds" {
+  source = "./modules/rds"
+
+  # Основні параметри
+  db_name      = "djangodb"
+  db_user      = "dbadmin"
+  db_password  = "SecurePassword123!"
+  
+  # Мережеві налаштування
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  eks_security_group_id = module.eks.cluster_primary_security_group_id
+
+  # ПЕРЕМИКАЧ
+  use_aurora = false # Зміни на true, якщо хочеш Aurora
+
+  # Налаштування двигуна (для RDS)
+  engine         = "postgres"
+  engine_version = "15.5"
+  instance_class = "db.t3.micro"
+  db_family      = "postgres15"
+  db_port        = 5432
+}

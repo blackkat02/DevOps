@@ -15,3 +15,9 @@ variable "admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "db_password" {
+  description = "Password for the RDS database"
+  type        = string
+  sensitive   = true
+}

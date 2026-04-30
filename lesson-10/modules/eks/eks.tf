@@ -29,7 +29,7 @@ resource "aws_eks_addon" "ebs_csi" {
   depends_on   = [module.eks]
 }
 
-resource "kubernetes_storage_class" "ebs_sc" {
+resource "kubernetes_storage_class_v1" "ebs_sc" {
   metadata {
     name = "ebs-sc"
   }
