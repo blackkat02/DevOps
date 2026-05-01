@@ -15,3 +15,15 @@ variable "admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "db_password" {
+  description = "Password for the RDS database"
+  type        = string
+  sensitive   = true
+}
+
+variable "use_aurora" {
+  description = "If true, use Aurora Cluster instead of standard RDS instance"
+  type        = bool
+  default     = false
+}
