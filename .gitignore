@@ -24,9 +24,12 @@ Thumbs.db
 *.tfstate
 *.tfstate.backup
 *.tfvars
+*.tfvars.json
+secrets.yaml
 aws/
 awscliv2.zip*.tar.gz
 linux-amd64/
+.terraform.lock.hcl
 
 *.backup
 terraform.tfstate*

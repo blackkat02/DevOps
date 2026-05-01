@@ -38,7 +38,8 @@ resource "aws_db_parameter_group" "this" {
   family = var.db_family
 
   parameter {
-    name  = "max_connections"
-    value = "100"
+    name         = "max_connections"
+    value        = "100"
+    apply_method = "pending-reboot" # Додай цей рядок
   }
 }

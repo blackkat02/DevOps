@@ -1,7 +1,6 @@
 resource "aws_s3_bucket" "terraform_state" {
   bucket = var.bucket_name
 
-  # Запобігає випадковому видаленню бакета
   lifecycle {
     prevent_destroy = false
   }
@@ -14,7 +13,6 @@ resource "aws_s3_bucket_versioning" "enabled" {
   }
 }
 
-# Рекомендується також увімкнути шифрування за замовчуванням
 resource "aws_s3_bucket_server_side_encryption_configuration" "default" {
   bucket = aws_s3_bucket.terraform_state.id
 
