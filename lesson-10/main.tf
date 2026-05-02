@@ -19,7 +19,7 @@ data "aws_eks_cluster_auth" "cluster" {
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  
+
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
@@ -31,7 +31,7 @@ provider "helm" {
   kubernetes = {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    
+
     exec = {
       api_version = "client.authentication.k8s.io/v1beta1"
       args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
@@ -79,18 +79,19 @@ module "eks" {
       desired_size   = 2
 
       iam_role_additional_policies = {
-        AmazonEBSCSIDriverPolicy            = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-        AmazonEC2ContainerRegistryPowerUser = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+        AmazonEBSCSIDriverPolicy           = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+        AmazonEC2ContainerRegistryReadOnly = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
       }
     }
   }
 }
 
 module "jenkins" {
-  source       = "./modules/jenkins"
+  source         = "./modules/jenkins"
   admin_password = var.admin_password
-  cluster_name = module.eks.cluster_name
-  depends_on   = [module.eks]
+  cluster_name   = module.eks.cluster_name
+  irsa_role_arn  = module.eks.jenkins_irsa_role_arn
+  depends_on     = [module.eks]
 }
 
 module "argo_cd" {
@@ -103,10 +104,10 @@ module "rds" {
   source = "./modules/rds"
 
   # Основні параметри
-  db_name      = "djangodb"
-  db_user      = "dbadmin"
+  db_name     = "djangodb"
+  db_user     = "dbadmin"
   db_password = var.db_password
-  
+
   # Мережеві налаштування
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_subnet_ids

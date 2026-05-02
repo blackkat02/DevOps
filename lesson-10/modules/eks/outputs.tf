@@ -21,3 +21,8 @@ output "cluster_id" {
 output "cluster_primary_security_group_id" {
   value = module.eks.cluster_primary_security_group_id
 }
+
+output "jenkins_irsa_role_arn" {
+  description = "ARN of the IRSA role for Jenkins to access ECR"
+  value       = aws_iam_role.jenkins_irsa.arn
+}

@@ -1,3 +1,28 @@
+# Aurora Parameter Groups
+resource "aws_rds_cluster_parameter_group" "this" {
+  count  = var.use_aurora ? 1 : 0
+  name   = "${var.db_name}-cluster-params"
+  family = var.db_family
+
+  parameter {
+    name         = "max_connections"
+    value        = "100"
+    apply_method = "pending-reboot"
+  }
+}
+
+resource "aws_db_parameter_group" "aurora_instance" {
+  count  = var.use_aurora ? 1 : 0
+  name   = "${var.db_name}-aurora-instance-params"
+  family = var.db_family
+
+  parameter {
+    name         = "max_connections"
+    value        = "100"
+    apply_method = "pending-reboot"
+  }
+}
+
 #Кластер Aurora
 resource "aws_rds_cluster" "this" {
   count = var.use_aurora ? 1 : 0
@@ -8,7 +33,7 @@ resource "aws_rds_cluster" "this" {
   database_name           = var.db_name
   master_username         = var.db_user
   master_password         = var.db_password
-  
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.this[0].name
   db_subnet_group_name    = aws_db_subnet_group.this.name
   vpc_security_group_ids  = [aws_security_group.rds.id]
   
@@ -28,6 +53,7 @@ resource "aws_rds_cluster_instance" "this" {
   instance_class     = var.instance_class
   engine             = aws_rds_cluster.this[0].engine
   engine_version     = aws_rds_cluster.this[0].engine_version
+  db_parameter_group_name = aws_db_parameter_group.aurora_instance[0].name
   
   db_subnet_group_name = aws_db_subnet_group.this.name
 

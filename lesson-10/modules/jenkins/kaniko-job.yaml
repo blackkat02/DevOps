@@ -6,22 +6,13 @@ metadata:
 spec:
   template:
     spec:
+      serviceAccountName: jenkins
       containers:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
         - "--dockerfile=Dockerfile"
-        - "--context=git://github.com/your-username/django-app.git" # Заміни на свій репо
+        - "--context=git://github.com/blackkat02/DevOps.git#refs/heads/lesson-10"
         - "--destination=882574060785.dkr.ecr.us-west-2.amazonaws.com/lesson-10-ecr:latest"
-        volumeMounts:
-        - name: kaniko-secret
-          mountPath: /kaniko/.docker
-          readOnly: true
+        - "--ecr-auto-login=true"
       restartPolicy: Never
-      volumes:
-      - name: kaniko-secret
-        secret:
-          secretName: kaniko-secret
-          items:
-            - key: .dockerconfigjson
-              path: config.json

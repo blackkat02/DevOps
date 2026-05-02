@@ -20,3 +20,8 @@ variable "admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "irsa_role_arn" {
+  description = "ARN of the IRSA role for Jenkins to access ECR"
+  type        = string
+}
