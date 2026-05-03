@@ -1,111 +1,206 @@
-# 🗄️ RDS & Aurora Infrastructure Module
+# Final DevOps Project — AWS Infrastructure with CI/CD
 
-Terraform-модуль для розгортання реляційних баз даних в AWS. Підтримує два режими роботи: **стандартний Amazon RDS** (одиночний інстанс) та **Amazon Aurora Cluster** — перемикання між ними здійснюється однією змінною `use_aurora`.
+## Overview
 
-## 📋 Зміст
+This project implements a production-ready infrastructure on AWS using Terraform, featuring a complete CI/CD pipeline with Jenkins and ArgoCD, Kubernetes workloads on EKS, PostgreSQL on RDS, and monitoring via Prometheus and Grafana.
 
-- [Приклад використання](#-приклад-використання)
-- [Опис змінних](#%EF%B8%8F-опис-змінних)
-- [Як керувати модулем](#-як-керувати-модулем)
-- [Ресурси, що створюються](#-ресурси-що-створюються)
+## Architecture
 
-## 🚀 Приклад використання
+┌────────────────────────────────────────────────────────┐
+│                        AWS Cloud                       │
+│                                                        │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │                  VPC (10.0.0.0/16)              │   │
+│  │                                                 │   │
+│  │  Public Subnets          Private Subnets        │   │
+│  │  10.0.1-3.0/24           10.0.4-6.0/24          │   │
+│  │       │                        │                │   │
+│  │  [NAT Gateway]           [EKS Cluster]          │   │
+│  │  [Internet GW]           [RDS PostgreSQL]       │   │
+│  │                                                 │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                        │
+│  [ECR Registry]   [S3 + DynamoDB] (Terraform state)    │
+└────────────────────────────────────────────────────────┘
 
-module "rds" {
-  source = "./modules/rds"
+## Tech Stack
 
-  # Вибір типу БД: true — Aurora Cluster, false — Single RDS Instance
-  use_aurora = false
+| Component | Technology |
+|---|---|
+| Infrastructure as Code | Terraform |
+| Cloud Provider | AWS |
+| Container Orchestration | EKS (Kubernetes 1.32) |
+| CI | Jenkins |
+| CD | ArgoCD |
+| Database | RDS PostgreSQL 15 |
+| Container Registry | ECR |
+| Monitoring | Prometheus + Grafana |
+| Application | Django (Python) |
+| Container Build | Kaniko |
 
-  # Основні параметри
-  db_name     = var.db_name
-  db_user     = var.db_user
-  db_password = var.db_password  # Мінімум 8 символів
+## Project Structure
 
-  # Мережеві налаштування
-  vpc_id                = module.vpc.vpc_id
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  eks_security_group_id = module.eks.cluster_primary_security_group_id
+final-project/
+├── main.tf                  # Root module — connects all modules
+├── backend.tf               # S3 + DynamoDB remote state
+├── outputs.tf               # Root outputs
+├── variables.tf             # Root variables
+├── terraform.tfvars.example # Variable template (secrets excluded)
+│
+├── modules/
+│   ├── s3-backend/          # S3 bucket + DynamoDB lock table
+│   ├── vpc/                 # VPC, subnets, IGW, NAT, routes
+│   ├── ecr/                 # ECR repository
+│   ├── eks/                 # EKS cluster + node groups + IRSA
+│   ├── rds/                 # RDS PostgreSQL + Aurora option
+│   ├── jenkins/             # Jenkins via Helm
+│   ├── argo_cd/             # ArgoCD via Helm + app charts
+│   └── monitoring/          # Prometheus + Grafana via Helm
+│
+├── charts/
+│   └── django-app/          # Helm chart for Django application
+│       ├── templates/
+│       │   ├── deployment.yaml
+│       │   ├── service.yaml
+│       │   ├── configmap.yaml
+│       │   └── hpa.yaml
+│       └── values.yaml
+│
+└── app/                     # Django application source
+├── Dockerfile
+├── Jenkinsfile
+└── requirements.txt
 
-  # Конфігурація двигуна
-  engine         = "postgres"
-  engine_version = "15"           # Автоматично обирає останню мінорну версію
-  instance_class = "db.t3.micro"
-  db_family      = "postgres15"
-  db_port        = 5432
-}
+## Infrastructure Components
 
-## ⚙️ Опис змінних
+### Networking
+- VPC with public and private subnets across 3 availability zones
+- Internet Gateway for public access
+- NAT Gateway for private subnet outbound traffic
+- Security Groups with least-privilege access rules
 
-| Змінна | Тип | Опис |
+### EKS Cluster
+- Kubernetes 1.32
+- Managed node group with t3.small instances (auto-scaling 0–3)
+- EBS CSI Driver for persistent volumes
+- IRSA (IAM Roles for Service Accounts) for Jenkins ECR access
 
-| `use_aurora` | `bool` | Ключовий перемикач. `true` — активує Aurora Cluster, `false` — Single RDS Instance |
-| `db_name` | `string` | Назва бази даних та префікс для ресурсів AWS |
-| `db_user` | `string` | Ім'я адміністратора бази даних |
-| `db_password` | `string` | Пароль *(sensitive)*. Має бути не менше 8 символів |
-| `vpc_id` | `string` | ID вашої VPC для створення Security Group |
-| `private_subnet_ids` | `list(string)` | Список ID приватних підмереж для DB Subnet Group |
-| `eks_security_group_id` | `string` | ID Security Group кластера EKS — тільки з неї дозволено вхідний трафік до БД |
-| `engine` | `string` | Тип СУБД: `postgres`, `mysql`, `aurora-postgresql` тощо |
-| `engine_version` | `string` | Версія двигуна. Рекомендовано вказувати мажорну версію, наприклад `"15"` |
-| `instance_class` | `string` | Тип інстансу: `db.t3.micro` для dev, `db.r5.large` для prod |
-| `db_family` | `string` | Сімейство Parameter Group, наприклад `postgres15` |
-| `db_port` | `number` | Порт бази даних: `5432` для PostgreSQL, `3306` для MySQL |
+### CI/CD Pipeline
+- **Jenkins** builds Docker images using Kaniko (no Docker daemon required)
+- Images are pushed to ECR
+- **ArgoCD** watches the Git repository and deploys updated Helm charts
+- GitOps flow: code push → Jenkins build → image tag update → ArgoCD sync
 
-## 🛠 Як керувати модулем
+### Security
+- Private subnets for EKS nodes and RDS
+- IAM roles with minimal required permissions
+- IRSA for pod-level AWS access
+- KMS encryption for EKS secrets
+- RDS not publicly accessible
+- Secrets managed via Kubernetes Secrets (not stored in Git)
 
-### 1. Зміна типу бази даних
+## Prerequisites
 
-За режим розгортання відповідає змінна `use_aurora`:
+- AWS CLI configured with appropriate permissions
+- Terraform >= 1.0.0
+- kubectl
+- helm
 
-| Середовище | Значення | Результат |
+## Deployment
 
-| **Dev / Test** | `use_aurora = false` | Один інстанс RDS — мінімальна вартість |
-| **Production** | `use_aurora = true` | `aws_rds_cluster` + `aws_rds_cluster_instance` — висока доступність |
+### 1. Bootstrap state backend
 
-### 2. Зміна версії двигуна або класу інстансу
+```bash
+# First run — create S3 and DynamoDB for state
+cd modules/s3-backend
+terraform init
+terraform apply
+```
 
-Змініть відповідні значення у виклику модуля:
+### 2. Configure variables
 
-engine_version = "16"           # Оновлення мажорної версії PostgreSQL
-instance_class = "db.r5.large"  # Зміна потужності інстансу
+```bash
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your values
+```
 
-> ⚠️ **Важливо:** Зміна `engine_version` або певних параметрів у Parameter Group може потребувати перезавантаження бази даних (статус `pending-reboot`). Плануйте такі оновлення у вікні технічного обслуговування.
+### 3. Deploy infrastructure
 
-### 3. Налаштування Parameter Group
+```bash
+terraform init
+terraform apply
+```
 
-Модуль автоматично створює Parameter Group залежно від типу розгортання:
+### 4. Configure kubectl
 
-| `use_aurora` | Ресурс Parameter Group | Область дії |
+```bash
+aws eks update-kubeconfig --region us-west-2 --name <cluster-name>
+```
 
-| `false` | `aws_db_parameter_group` | Одиночний RDS-інстанс |
-| `true` | `aws_rds_cluster_parameter_group` + `aws_db_parameter_group` | Весь кластер + кожен інстанс окремо |
+### 5. Verify deployment
 
-При `use_aurora = true` обидва ресурси створюються з `count = var.use_aurora ? 1 : 0`, що гарантує застосування параметрів (зокрема `max_connections`) на рівні всього кластера, а не лише окремого інстансу.
+```bash
+kubectl get all -n jenkins
+kubectl get all -n argocd
+kubectl get all -n monitoring
+```
 
-У файлі `shared.tf` вже налаштовані базові параметри продуктивності:
+## Accessing Services
 
-| Параметр | Значення | Опис |
+```bash
+# Jenkins
+kubectl port-forward svc/jenkins 8080:8080 -n jenkins
 
-| `max_connections` | `100` | Максимальна кількість одночасних з'єднань |
-| `log_statement` | `all` | Логування всіх SQL-запитів |
-| `work_mem` | *(задано)* | Оптимізація пам'яті для сортувань та агрегацій |
+# ArgoCD
+kubectl port-forward svc/argocd-server 8081:80 -n argocd
 
-Для зміни параметрів відредагуйте блок `parameter` у відповідному ресурсі в `shared.tf`.
+# Grafana
+kubectl port-forward svc/prometheus-stack-grafana 3000:80 -n monitoring
+```
 
-## 🏗 Ресурси, що створюються
+| Service | URL | Default credentials |
+|---|---|---|
+| Jenkins | http://localhost:8080 | admin / see tfvars |
+| ArgoCD | http://localhost:8081 | admin / auto-generated |
+| Grafana | http://localhost:3000 | admin / see tfvars |
 
-Незалежно від значення `use_aurora`, модуль **завжди** створює такі спільні ресурси:
+## CI/CD Flow
 
-| Ресурс | Призначення |
+Developer pushes code
+│
+▼
+GitHub (main branch)
+│
+▼
+Jenkins Pipeline
+├── Build Docker image (Kaniko)
+├── Push to ECR
+└── Update image tag in values.yaml
+│
+▼
+ArgoCD detects change
+│
+▼
+Deploy to EKS
 
-| `aws_db_subnet_group` | Ізолює базу даних у приватних підмережах VPC |
-| `aws_security_group` | Дозволяє вхідний трафік на порт БД виключно з Security Group кластера EKS |
-| `aws_db_parameter_group` | Налаштування параметрів продуктивності для інстансу |
+## Monitoring
 
-Залежно від значення `use_aurora` додатково створюються:
+Prometheus scrapes metrics from all cluster components. Grafana dashboards include:
+- Kubernetes cluster overview
+- Node resource utilization
+- Pod CPU and memory usage
+- Application-level metrics
 
-| `use_aurora` | Ресурси |
+## Cleanup
 
-| `false` | `aws_db_instance` — одиночний RDS-інстанс |
-| `true` | `aws_rds_cluster` + `aws_rds_cluster_instance` + `aws_rds_cluster_parameter_group` |
+```bash
+terraform destroy
+```
+
+> ⚠️ This will also delete the S3 bucket and DynamoDB table used for Terraform state. Back up your state file before destroying.
+
+## Notes
+
+- `terraform.tfvars` is excluded from Git via `.gitignore`
+- `app/.env` is excluded from Git and Docker image via `.dockerignore`
+- All sensitive values are passed via variables, never hardcoded
