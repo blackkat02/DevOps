@@ -35,3 +35,4 @@ linux-amd64/
 terraform.tfstate*
 *.tfstate*
 app/.env
+EOF

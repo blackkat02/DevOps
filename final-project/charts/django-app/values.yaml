@@ -1,8 +1,8 @@
 replicaCount: 2
 
 image:
-  repository: "<AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/final-project-ecr"
-  tag: "v1.0.17"
+  repository: ""
+  tag: "latest"
   pullPolicy: Always
 
 service:
@@ -15,15 +15,15 @@ config:
   DEBUG: "True"
   POSTGRES_DB: "django_db"
   POSTGRES_USER: "db_user"
-  POSTGRES_HOST: "db-service-placeholder"
+  POSTGRES_HOST: "postgres-service"
   POSTGRES_PORT: "5432"
-
-secrets:
-  POSTGRES_PASSWORD: "my_simple_password_123"
-  SECRET_KEY: "django-insecure-test-key-for-lesson7"
 
 hpa:
   enabled: true
   minReplicas: 2
   maxReplicas: 6
   targetCPUUtilizationPercentage: 70
+
+secrets:
+  POSTGRES_PASSWORD: ""
+  SECRET_KEY: ""
