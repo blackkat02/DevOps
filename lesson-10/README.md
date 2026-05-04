@@ -1,21 +1,16 @@
 # 🗄️ RDS & Aurora Infrastructure Module
 
-Terraform-модуль для розгортання реляційних баз даних в AWS. Підтримує два режими роботи: **стандартний Amazon RDS** (одиночний інстанс) та **Amazon Aurora Cluster** — перемикання між ними здійснюється однією змінною.
-
----
+Terraform-модуль для розгортання реляційних баз даних в AWS. Підтримує два режими роботи: **стандартний Amazon RDS** (одиночний інстанс) та **Amazon Aurora Cluster** — перемикання між ними здійснюється однією змінною `use_aurora`.
 
 ## 📋 Зміст
 
-- [Швидкий старт](#-швидкий-старт)
+- [Приклад використання](#-приклад-використання)
 - [Опис змінних](#%EF%B8%8F-опис-змінних)
-- [Керування модулем](#-керування-модулем)
+- [Як керувати модулем](#-як-керувати-модулем)
 - [Ресурси, що створюються](#-ресурси-що-створюються)
 
----
+## 🚀 Приклад використання
 
-## 🚀 Швидкий старт
-
-```hcl
 module "rds" {
   source = "./modules/rds"
 
@@ -23,8 +18,8 @@ module "rds" {
   use_aurora = false
 
   # Основні параметри
-  db_name     = "djangodb"
-  db_user     = "dbadmin"
+  db_name     = var.db_name
+  db_user     = var.db_user
   db_password = var.db_password  # Мінімум 8 символів
 
   # Мережеві налаштування
@@ -39,78 +34,78 @@ module "rds" {
   db_family      = "postgres15"
   db_port        = 5432
 }
-```
-
----
 
 ## ⚙️ Опис змінних
 
 | Змінна | Тип | Опис |
-|---|---|---|
+
 | `use_aurora` | `bool` | Ключовий перемикач. `true` — активує Aurora Cluster, `false` — Single RDS Instance |
-| `db_name` | `string` | Назва бази даних та префікс для ресурсів |
+| `db_name` | `string` | Назва бази даних та префікс для ресурсів AWS |
 | `db_user` | `string` | Ім'я адміністратора бази даних |
 | `db_password` | `string` | Пароль *(sensitive)*. Має бути не менше 8 символів |
 | `vpc_id` | `string` | ID вашої VPC для створення Security Group |
 | `private_subnet_ids` | `list(string)` | Список ID приватних підмереж для DB Subnet Group |
-| `eks_security_group_id` | `string` | ID Security Group кластера EKS — дозволяє вхідний трафік до БД |
+| `eks_security_group_id` | `string` | ID Security Group кластера EKS — тільки з неї дозволено вхідний трафік до БД |
 | `engine` | `string` | Тип СУБД: `postgres`, `mysql`, `aurora-postgresql` тощо |
 | `engine_version` | `string` | Версія двигуна. Рекомендовано вказувати мажорну версію, наприклад `"15"` |
 | `instance_class` | `string` | Тип інстансу: `db.t3.micro` для dev, `db.r5.large` для prod |
 | `db_family` | `string` | Сімейство Parameter Group, наприклад `postgres15` |
 | `db_port` | `number` | Порт бази даних: `5432` для PostgreSQL, `3306` для MySQL |
 
----
+## 🛠 Як керувати модулем
 
-## 🛠 Керування модулем
-
-### Зміна типу бази даних
+### 1. Зміна типу бази даних
 
 За режим розгортання відповідає змінна `use_aurora`:
 
 | Середовище | Значення | Результат |
-|---|---|---|
+
 | **Dev / Test** | `use_aurora = false` | Один інстанс RDS — мінімальна вартість |
 | **Production** | `use_aurora = true` | `aws_rds_cluster` + `aws_rds_cluster_instance` — висока доступність |
 
-### Оновлення версії двигуна або класу інстансу
+### 2. Зміна версії двигуна або класу інстансу
 
 Змініть відповідні значення у виклику модуля:
 
-```hcl
-engine_version = "16"          # Оновлення мажорної версії
-instance_class = "db.r5.large" # Зміна потужності інстансу
-```
+engine_version = "16"           # Оновлення мажорної версії PostgreSQL
+instance_class = "db.r5.large"  # Зміна потужності інстансу
 
-> ⚠️ **Важливо:** Зміна `engine_version` або певних параметрів у `parameter_group` може потребувати перезавантаження бази даних (статус `pending-reboot`). Плануйте такі оновлення у вікні технічного обслуговування.
+> ⚠️ **Важливо:** Зміна `engine_version` або певних параметрів у Parameter Group може потребувати перезавантаження бази даних (статус `pending-reboot`). Плануйте такі оновлення у вікні технічного обслуговування.
 
-### Налаштування Parameter Group
+### 3. Налаштування Parameter Group
 
-У файлі `shared.tf` модуля вже налаштовані базові параметри продуктивності:
+Модуль автоматично створює Parameter Group залежно від типу розгортання:
+
+| `use_aurora` | Ресурс Parameter Group | Область дії |
+
+| `false` | `aws_db_parameter_group` | Одиночний RDS-інстанс |
+| `true` | `aws_rds_cluster_parameter_group` + `aws_db_parameter_group` | Весь кластер + кожен інстанс окремо |
+
+При `use_aurora = true` обидва ресурси створюються з `count = var.use_aurora ? 1 : 0`, що гарантує застосування параметрів (зокрема `max_connections`) на рівні всього кластера, а не лише окремого інстансу.
+
+У файлі `shared.tf` вже налаштовані базові параметри продуктивності:
 
 | Параметр | Значення | Опис |
-|---|---|---|
+
 | `max_connections` | `100` | Максимальна кількість одночасних з'єднань |
 | `log_statement` | `all` | Логування всіх SQL-запитів |
 | `work_mem` | *(задано)* | Оптимізація пам'яті для сортувань та агрегацій |
 
-Для тонкого налаштування відредагуйте блок `parameter` у ресурсі `aws_db_parameter_group` або `aws_rds_cluster_parameter_group` безпосередньо в `shared.tf`.
-
----
+Для зміни параметрів відредагуйте блок `parameter` у відповідному ресурсі в `shared.tf`.
 
 ## 🏗 Ресурси, що створюються
 
 Незалежно від значення `use_aurora`, модуль **завжди** створює такі спільні ресурси:
 
 | Ресурс | Призначення |
-|---|---|
+
 | `aws_db_subnet_group` | Ізолює базу даних у приватних підмережах VPC |
 | `aws_security_group` | Дозволяє вхідний трафік на порт БД виключно з Security Group кластера EKS |
-| `aws_db_parameter_group` | Тонке налаштування параметрів продуктивності СУБД |
+| `aws_db_parameter_group` | Налаштування параметрів продуктивності для інстансу |
 
 Залежно від значення `use_aurora` додатково створюються:
 
 | `use_aurora` | Ресурси |
-|---|---|
+
 | `false` | `aws_db_instance` — одиночний RDS-інстанс |
-| `true` | `aws_rds_cluster` + `aws_rds_cluster_instance` — Aurora Cluster |
+| `true` | `aws_rds_cluster` + `aws_rds_cluster_instance` + `aws_rds_cluster_parameter_group` |

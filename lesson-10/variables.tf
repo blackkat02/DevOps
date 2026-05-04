@@ -1,29 +1,36 @@
 variable "bucket_name" {
-  description = "Назва S3 бакета"
+  description = "Назва S3 бакета для стейту"
   type        = string
-  default     = "borys-bucket-terraform"
 }
 
 variable "table_name" {
-  description = "Назва таблиці DynamoDB"
+  description = "Назва DynamoDB таблиці для локування стейту"
   type        = string
-  default     = "terraform-locks"
 }
 
 variable "admin_password" {
-  description = "Jenkins admin password"
+  description = "Пароль адміністратора Jenkins"
   type        = string
   sensitive   = true
 }
 
 variable "db_password" {
-  description = "Password for the RDS database"
+  description = "Пароль до бази даних"
   type        = string
   sensitive   = true
 }
 
 variable "use_aurora" {
-  description = "If true, use Aurora Cluster instead of standard RDS instance"
+  description = "Перемикач Aurora/RDS"
   type        = bool
-  default     = false
 }
+
+# Решта змінних, які ти використовуєш у tfvars:
+variable "db_name" { type = string }
+variable "db_user" { type = string }
+variable "engine" { type = string }
+variable "engine_version" { type = string }
+variable "instance_class" { type = string }
+variable "db_family" { type = string }
+variable "db_port" { type = number }
+variable "cluster_name" { type = string }

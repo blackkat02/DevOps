@@ -33,6 +33,8 @@ resource "helm_release" "jenkins" {
     file("${path.module}/values.yaml"),
     yamlencode({
       controller = {
+        serviceType = "ClusterIP" 
+        
         admin = {
           password = var.admin_password
         }
