@@ -12,7 +12,7 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - "--dockerfile=Dockerfile"
-        - "--context=git://github.com/blackkat02/DevOps.git#refs/heads/lesson-10"
-        - "--destination=882574060785.dkr.ecr.us-west-2.amazonaws.com/lesson-10-ecr:latest"
+        - "--context=git://github.com/blackkat02/DevOps.git#refs/heads/final-project"
+        - "--destination=$(AWS_ACCOUNT_ID).dkr.ecr.us-west-2.amazonaws.com/final-project-ecr:latest"
         - "--ecr-auto-login=true"
       restartPolicy: Never

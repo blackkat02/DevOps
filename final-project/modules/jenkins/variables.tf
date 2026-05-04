@@ -25,3 +25,7 @@ variable "irsa_role_arn" {
   description = "ARN of the IRSA role for Jenkins to access ECR"
   type        = string
 }
+variable "ecr_repository_url" {
+  description = "URL ECR репозиторію для Django app"
+  type        = string
+}

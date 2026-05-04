@@ -52,8 +52,15 @@ resource "helm_release" "jenkins" {
           name   = kubernetes_service_account_v1.jenkins.metadata[0].name
         }
       }
+
       persistence = {
         storageClass = "ebs-sc"
+      }
+
+      djangoApp = {
+        image = {
+          repository = var.ecr_repository_url
+        }
       }
     })
   ]

@@ -1,6 +1,10 @@
 applications:
   django-app:
-    namespace: "default"
-    repoURL: "https://github.com/YOUR_USERNAME/YOUR_REPO.git" # Зміни на свій!
-    targetRevision: "main"
-    path: "charts/django-app"
+    namespace: "django-app"
+    repoURL: "https://github.com/blackkat02/DevOps.git" 
+    targetRevision: "final-project"
+    path: "final-project/charts/django-app"
+
+image:
+  repository: ""
+  tag: "v1.0.0"

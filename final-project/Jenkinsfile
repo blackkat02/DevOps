@@ -18,27 +18,43 @@ spec:
     image: alpine/git:latest
     command: ["sleep"]
     args: ["99d"]
+  - name: aws-cli
+    image: amazon/aws-cli:latest
+    command: ["sleep"]
+    args: ["99d"]
 """
         }
     }
 
     environment {
-        ECR_REGISTRY   = "882574060785.dkr.ecr.us-west-2.amazonaws.com"
-        ECR_REPOSITORY = "lesson-9-ecr"          // ⚠️ змініть на вашу ECR назву
+        AWS_REGION     = "us-west-2"
+        ECR_REPOSITORY = "final-project-ecr"
         IMAGE_TAG      = "v1.0.${BUILD_NUMBER}"
-
         COMMIT_EMAIL   = "jenkins@example.com"
         COMMIT_NAME    = "Jenkins"
+        GITHUB_REPO    = "blackkat02/DevOps"
+        GITHUB_BRANCH  = "final-project"
     }
 
     stages {
+        stage('Prepare Environment') {
+            steps {
+                container('aws-cli') {
+                    script {
+                        def accountId = sh(script: "aws sts get-caller-identity --query Account --output text", returnStdout: true).trim()
+                        env.ECR_REGISTRY = "${accountId}.dkr.ecr.${env.AWS_REGION}.amazonaws.com"
+                    }
+                }
+            }
+        }
+
         stage('Build & Push to ECR') {
             steps {
                 container('kaniko') {
                     sh """
                     /kaniko/executor \
-                    --context ${WORKSPACE}/app \
-                    --dockerfile ${WORKSPACE}/app/Dockerfile \
+                    --context ${WORKSPACE}/final-project/Django \
+                    --dockerfile ${WORKSPACE}/final-project/Django/Dockerfile \
                     --destination ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} \
                     --destination ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
                     """
@@ -49,22 +65,30 @@ spec:
         stage('Update Helm Chart Tag') {
             steps {
                 container('git') {
-                    withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PAT')]) {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'github-token',
+                        usernameVariable: 'GIT_USER',
+                        passwordVariable: 'GIT_PAT'
+                    )]) {
                         sh """
-                            set -x
+                            set -xe
                             git config --global --add safe.directory '*'
                             git config --global user.email "${COMMIT_EMAIL}"
                             git config --global user.name "${COMMIT_NAME}"
 
-                            sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' charts/django-app/values.yaml
+                            # Використовуємо sed для заміни тегу. 
+                            # Переконайся, що в values.yaml є рядок 'tag: "щось"'
+                            sed -i 's|tag: .*|tag: "${IMAGE_TAG}"|' final-project/charts/django-app/values.yaml
 
-                            echo "Check values.yaml content:"
-                            grep "tag:" charts/django-app/values.yaml
-
-                            git add charts/django-app/values.yaml
-                            git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
-
-                            git push https://${GIT_USER}:${GIT_PAT}@github.com/YOUR_USERNAME/YOUR_REPO.git HEAD:main
+                            git add final-project/charts/django-app/values.yaml
+                            
+                            # Перевірка на наявність змін, щоб не "ламати" пайплайн порожнім комітом
+                            if ! git diff-index --quiet HEAD; then
+                                git commit -m "chore: update image tag to ${IMAGE_TAG} [skip ci]"
+                                git push https://${GIT_USER}:${GIT_PAT}@github.com/${GITHUB_REPO}.git HEAD:${GITHUB_BRANCH}
+                            else
+                                echo "No changes to commit"
+                            fi
                         """
                     }
                 }

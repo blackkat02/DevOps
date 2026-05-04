@@ -83,11 +83,12 @@ module "eks" {
 }
 
 module "jenkins" {
-  source         = "./modules/jenkins"
-  admin_password = var.admin_password
-  cluster_name   = module.eks.cluster_name
-  irsa_role_arn  = module.eks.jenkins_irsa_role_arn
-  depends_on     = [module.eks]
+  source             = "./modules/jenkins"
+  admin_password     = var.admin_password
+  cluster_name       = module.eks.cluster_name
+  irsa_role_arn      = module.eks.jenkins_irsa_role_arn
+  ecr_repository_url = module.ecr.repository_url
+  depends_on         = [module.eks]
 }
 
 module "argo_cd" {
